@@ -1,9 +1,4 @@
 /**
- * @module
- */
-export {};
-
-/**
  * This is a WebAssembly build of SQLite with experimental support for
  * writing SQLite virtual file systems and modules (for virtual tables)
  * in Javascript. Also see the
