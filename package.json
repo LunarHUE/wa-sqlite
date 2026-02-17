@@ -1,5 +1,5 @@
 {
-  "name": "wa-sqlite",
+  "name": "@lunarhue/react-native-web-wa-sqlite",
   "version": "1.0.9",
   "type": "module",
   "main": "src/sqlite-api.js",
