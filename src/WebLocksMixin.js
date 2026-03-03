@@ -206,7 +206,11 @@ export const WebLocksMixin = superclass => class extends superclass {
                 lockState.hint?.();
               return VFS.SQLITE_BUSY;
             }
-            await this.#acquire(lockState, 'access', SHARED);
+            if (!await this.#acquire(lockState, 'access', SHARED)) {
+              lockState.gate();
+              lockState.hint?.();
+              return VFS.SQLITE_BUSY;
+            }
             lockState.gate();
             console.assert(!lockState.gate);
             console.assert(!!lockState.access);
@@ -322,7 +326,15 @@ export const WebLocksMixin = superclass => class extends superclass {
           // shared lock. This should always succeed because we hold
           // the gate lock.
           lockState.access();
-          await this.#acquire(lockState, 'access', SHARED);
+          if (!await this.#acquire(lockState, 'access', SHARED)) {
+            // Failed to reacquire as shared — release everything
+            // and drop to NONE since we can't hold SHARED.
+            lockState.gate();
+            lockState.reserved?.();
+            lockState.hint?.();
+            lockState.type = VFS.SQLITE_LOCK_NONE;
+            return VFS.SQLITE_IOERR_UNLOCK;
+          }
 
           // Release our gate and reserved locks. We might not have a
           // reserved lock if we were handling a hot journal.
@@ -337,7 +349,12 @@ export const WebLocksMixin = superclass => class extends superclass {
         case VFS.SQLITE_LOCK_RESERVED:
           // This transition is rare, probably only on an I/O error
           // while writing to a journal file.
-          await this.#acquire(lockState, 'access', SHARED);
+          if (!await this.#acquire(lockState, 'access', SHARED)) {
+            lockState.reserved();
+            lockState.hint?.();
+            lockState.type = VFS.SQLITE_LOCK_NONE;
+            return VFS.SQLITE_IOERR_UNLOCK;
+          }
           lockState.reserved();
           lockState.hint?.();
           console.assert(!!lockState.access);
