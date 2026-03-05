@@ -22,6 +22,7 @@
     "test/*"
   ],
   "scripts": {
+    "build": "bash scripts/docker-build.sh",
     "build-docs": "typedoc",
     "start": "web-dev-server",
     "test": "web-test-runner",
