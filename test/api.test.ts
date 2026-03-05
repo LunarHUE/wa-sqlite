@@ -1,7 +1,7 @@
-import { TestContext } from "./TestContext.js";
-import { api_exec } from "./api_exec.js";
-import { api_misc } from "./api_misc.js";
-import { api_statements } from "./api_statements.js";
+import { TestContext } from './TestContext.ts';
+import { api_exec } from './api_exec.ts';
+import { api_misc } from './api_misc.ts';
+import { api_statements } from './api_statements.ts';
 
 const ALL_BUILDS = ['default', 'asyncify'];
 const ASYNC_BUILDS = ['asyncify'];
@@ -12,8 +12,7 @@ if (supportsJSPI) {
   ASYNC_BUILDS.push('jspi');
 }
 
-/** @type {Map<string, string[]>} */
-const CONFIGS = new Map([
+const CONFIGS = new Map<string, string[]>([
   ['', ALL_BUILDS],
   ['MemoryVFS', ALL_BUILDS],
   ['AccessHandlePoolVFS', ALL_BUILDS],
@@ -38,7 +37,7 @@ describe('SQLite API', function() {
   }
 });
 
-function apiSpecs(build, config) {
+function apiSpecs(build: string, config: string) {
   const context = new TestContext({ build, config });
 
   describe(`SQLite ${build} ${config}`, function() {

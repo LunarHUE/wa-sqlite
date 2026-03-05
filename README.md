@@ -18,15 +18,15 @@ Minor build customization (e.g. changing build defines or flags) can be done wit
 If you do want to build yourself, here are the prerequisites:
 
 * Building on Debian Linux is known to work, compatibility with other platforms is unknown.
-* `yarn` - If you use a different package manager (e.g. `npm`) then file paths in the demo will need adjustment.
+* `pnpm` - If you use a different package manager (e.g. `npm`) then file paths in the demo will need adjustment.
 * [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html) 3.1.61+.
 * `curl`, `make`, `openssl`, `sed`, `tclsh`, `unzip`
 
 Here are the build steps:
 * Make sure `emcc` works.
-* `git clone git@github.com:rhashimoto/wa-sqlite.git`
-* `cd wa-sqlite`
-* `yarn install`
+* `git clone git@github.com:lunarhue/react-native-web-wa-sqlite.git`
+* `cd react-native-web-wa-sqlite`
+* `pnpm install`
 * `make`
 
 The default build produces ES6 modules + WASM, [synchronous and asynchronous](https://github.com/rhashimoto/wa-sqlite/issues/7) (using Asyncify and JSPI) in `dist/`.

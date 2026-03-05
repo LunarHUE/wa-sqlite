@@ -1,8 +1,10 @@
 import * as Comlink from 'comlink';
+import { expect } from './helpers.ts';
+import { TestContext } from './TestContext.ts';
 
-export function sql_0003(context) {
+export function sql_0003(context: TestContext) {
   describe('sql_0003', function() {
-    let proxy, sqlite3, db;
+    let proxy: any, sqlite3: any, db: any;
     beforeEach(async function() {
       proxy = await context.create();
       sqlite3 = proxy.sqlite3;
@@ -23,28 +25,28 @@ export function sql_0003(context) {
           SELECT n FROM numbers;
       `);
 
-      let pageSizeBeforeVacuum;
+      let pageSizeBeforeVacuum: number | undefined;
       await sqlite3.exec(db, `
         PRAGMA page_size;
-      `, Comlink.proxy(row => pageSizeBeforeVacuum = row[0]));
-      expect(pageSizeBeforeVacuum).toBe(8192);
+      `, Comlink.proxy((row: unknown[]) => pageSizeBeforeVacuum = row[0] as number));
+      expect(pageSizeBeforeVacuum).to.equal(8192);
 
       await sqlite3.exec(db, `
         PRAGMA page_size=4096;
         VACUUM;
       `);
 
-      let pageSizeAfterVacuum;
+      let pageSizeAfterVacuum: number | undefined;
       await sqlite3.exec(db, `
         PRAGMA page_size;
-      `, Comlink.proxy(row => pageSizeAfterVacuum = row[0]));
-      expect(pageSizeAfterVacuum).toBe(4096);
+      `, Comlink.proxy((row: unknown[]) => pageSizeAfterVacuum = row[0] as number));
+      expect(pageSizeAfterVacuum).to.equal(4096);
 
-      let checkStatus;
+      let checkStatus: string | undefined;
       await sqlite3.exec(db, `
         PRAGMA integrity_check;
-      `, Comlink.proxy(row => checkStatus = row[0]));
-      expect(checkStatus).toBe('ok');
+      `, Comlink.proxy((row: unknown[]) => checkStatus = row[0] as string));
+      expect(checkStatus).to.equal('ok');
     });
 
     it('should vacuum to increase page size', async function() {
@@ -56,28 +58,28 @@ export function sql_0003(context) {
           SELECT n FROM numbers;
       `);
 
-      let pageSizeBeforeVacuum;
+      let pageSizeBeforeVacuum: number | undefined;
       await sqlite3.exec(db, `
         PRAGMA page_size;
-      `, Comlink.proxy(row => pageSizeBeforeVacuum = row[0]));
-      expect(pageSizeBeforeVacuum).toBe(8192);
+      `, Comlink.proxy((row: unknown[]) => pageSizeBeforeVacuum = row[0] as number));
+      expect(pageSizeBeforeVacuum).to.equal(8192);
 
       await sqlite3.exec(db, `
         PRAGMA page_size=16384;
         VACUUM;
       `);
 
-      let pageSizeAfterVacuum;
+      let pageSizeAfterVacuum: number | undefined;
       await sqlite3.exec(db, `
         PRAGMA page_size;
-      `, Comlink.proxy(row => pageSizeAfterVacuum = row[0]));
-      expect(pageSizeAfterVacuum).toBe(16384);
+      `, Comlink.proxy((row: unknown[]) => pageSizeAfterVacuum = row[0] as number));
+      expect(pageSizeAfterVacuum).to.equal(16384);
 
-      let checkStatus;
+      let checkStatus: string | undefined;
       await sqlite3.exec(db, `
         PRAGMA integrity_check;
-      `, Comlink.proxy(row => checkStatus = row[0]));
-      expect(checkStatus).toBe('ok');
+      `, Comlink.proxy((row: unknown[]) => checkStatus = row[0] as string));
+      expect(checkStatus).to.equal('ok');
     });
   });
 }

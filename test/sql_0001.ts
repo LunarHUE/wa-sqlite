@@ -1,8 +1,10 @@
 import * as Comlink from 'comlink';
+import { expect } from './helpers.ts';
+import { TestContext } from './TestContext.ts';
 
-export function sql_0001(context) {
+export function sql_0001(context: TestContext) {
   describe('sql_0001', function() {
-    let proxy, sqlite3, db;
+    let proxy: any, sqlite3: any, db: any;
     beforeEach(async function() {
       proxy = await context.create();
       sqlite3 = proxy.sqlite3;
@@ -15,35 +17,35 @@ export function sql_0001(context) {
     });
 
     it('should rollback a transaction', async function() {
-      let count;
+      let count: number | undefined;
       await sqlite3.exec(db, `
         CREATE TABLE foo (x PRIMARY KEY);
         INSERT INTO foo VALUES ('foo'), ('bar'), ('baz');
         SELECT COUNT(*) FROM foo;
-      `, Comlink.proxy(row => count = row[0]));
-      expect(count).toBe(3);
-  
+      `, Comlink.proxy((row: unknown[]) => count = row[0] as number));
+      expect(count).to.equal(3);
+
       count = undefined;
       await sqlite3.exec(db, `
         BEGIN TRANSACTION;
         WITH numbers(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM numbers LIMIT 100)
           INSERT INTO foo SELECT * FROM numbers;
         SELECT COUNT(*) FROM foo;
-      `, Comlink.proxy(row => count = row[0]));
-      expect(count).toBe(103);
-  
+      `, Comlink.proxy((row: unknown[]) => count = row[0] as number));
+      expect(count).to.equal(103);
+
       count = undefined;
       await sqlite3.exec(db, `
         ROLLBACK;
         SELECT COUNT(*) FROM foo;
-      `, Comlink.proxy(row => count = row[0]));
-      expect(count).toBe(3);
+      `, Comlink.proxy((row: unknown[]) => count = row[0] as number));
+      expect(count).to.equal(3);
 
-      let checkStatus;
+      let checkStatus: string | undefined;
       await sqlite3.exec(db, `
         PRAGMA integrity_check;
-      `, Comlink.proxy(row => checkStatus = row[0]));
-      expect(checkStatus).toBe('ok');
+      `, Comlink.proxy((row: unknown[]) => checkStatus = row[0] as string));
+      expect(checkStatus).to.equal('ok');
     });
   });
 }

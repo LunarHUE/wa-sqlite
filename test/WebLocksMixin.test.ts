@@ -1,8 +1,9 @@
-import { WebLocksMixin } from "../src/WebLocksMixin.js";
-import * as SQLite from "../src/sqlite-api.js";
+import { WebLocksMixin } from '../src/WebLocksMixin.js';
+import * as SQLite from '../src/sqlite-api.js';
+import { expect, expectAsync } from './helpers.ts';
 
 class Tester extends WebLocksMixin(Object) {
-  getFilename(fileId) {
+  getFilename(fileId: number) {
     return fileId.toString();
   }
 }
@@ -11,7 +12,7 @@ basicTests('exclusive');
 basicTests('shared');
 basicTests('shared+hint');
 
-function basicTests(policy) {
+function basicTests(policy: string) {
   beforeEach(async () => {
     await clearAllLocks();
   });
@@ -22,76 +23,76 @@ function basicTests(policy) {
 
   describe(`WebLocksMixin basics ${policy}`, () => {
     it('should make normal lock transitions', async () => {
-      let rc;
+      let rc: number;
       const tester = new Tester(null, null, { lockPolicy: policy });
 
       rc = await tester.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
       rc = await tester.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
       rc = await tester.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
       rc = await tester.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
       rc = await tester.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
-      await expectAsync(clearAllLocks()).toBeResolvedTo(0);
+      expect(await clearAllLocks()).to.equal(0);
     });
 
     it('should make recovery lock transitions', async () => {
-      let rc;
+      let rc: number;
       const tester = new Tester(null, null, { lockPolicy: policy });
 
       rc = await tester.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
       rc = await tester.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
       rc = await tester.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
       rc = await tester.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
-      await expectAsync(clearAllLocks()).toBeResolvedTo(0);
+      expect(await clearAllLocks()).to.equal(0);
     });
 
     it('should ignore repeated state requests', async () => {
-      let rc;
+      let rc: number;
       const tester = new Tester(null, null, { lockPolicy: policy });
 
       rc = await tester.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
       rc = await tester.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
       rc = await tester.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
       rc = await tester.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
       rc = await tester.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
       rc = await tester.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
       rc = await tester.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
       rc = await tester.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
       rc = await tester.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
       rc = await tester.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
-      expect(rc).toBe(SQLite.SQLITE_OK);
+      expect(rc).to.equal(SQLite.SQLITE_OK);
 
-      await expectAsync(clearAllLocks()).toBeResolvedTo(0);
+      expect(await clearAllLocks()).to.equal(0);
     });
   });
 }
@@ -106,43 +107,43 @@ describe('WebLocksMixin exclusive', () => {
   });
 
   it('should block multiple SHARED connections', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'exclusive' });
     const testerB = new Tester(null, null, { lockPolicy: 'exclusive' });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     const result = testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
     await new Promise(resolve => setTimeout(resolve, 100));
     await expectAsync(result).toBePending();
 
     rc = await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     await new Promise(resolve => setTimeout(resolve));
     await expectAsync(result).toBeResolvedTo(SQLite.SQLITE_OK);
 
     rc = await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
   });
 
   it('should timeout', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'exclusive', lockTimeout: 5 });
     const testerB = new Tester(null, null, { lockPolicy: 'exclusive', lockTimeout: 5 });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     const result = testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
     await new Promise(resolve => setTimeout(resolve, 100));
     await expectAsync(result).toBeResolvedTo(SQLite.SQLITE_BUSY);
 
     rc = await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
-    await expectAsync(clearAllLocks()).toBeResolvedTo(0);
+    expect(await clearAllLocks()).to.equal(0);
   });
 });
 
@@ -156,32 +157,32 @@ describe('WebLocksMixin shared', () => {
   });
 
   it('should allow multiple SHARED connections', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared' });
     const testerB = new Tester(null, null, { lockPolicy: 'shared' });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
     await testerB.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
   });
 
   it('should allow SHARED and RESERVED connections', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared' });
     const testerB = new Tester(null, null, { lockPolicy: 'shared' });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
@@ -189,21 +190,21 @@ describe('WebLocksMixin shared', () => {
   });
 
   it('should return BUSY on RESERVED deadlock', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared' });
     const testerB = new Tester(null, null, { lockPolicy: 'shared' });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-    expect(rc).toBe(SQLite.SQLITE_BUSY);
+    expect(rc).to.equal(SQLite.SQLITE_BUSY);
 
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
@@ -211,25 +212,25 @@ describe('WebLocksMixin shared', () => {
   });
 
   it('should block EXCLUSIVE until SHARED connections are released', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared' });
     const testerB = new Tester(null, null, { lockPolicy: 'shared' });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     const result = testerA.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
     await new Promise(resolve => setTimeout(resolve, 100));
     await expectAsync(result).toBePending();
 
     rc = await testerB.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     await new Promise(resolve => setTimeout(resolve));
     await expectAsync(result).toBeResolvedTo(SQLite.SQLITE_OK);
@@ -239,25 +240,25 @@ describe('WebLocksMixin shared', () => {
   });
 
   it('should block SHARED until EXCLUSIVE connection is released', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared' });
     const testerB = new Tester(null, null, { lockPolicy: 'shared' });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     const result = testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
     await new Promise(resolve => setTimeout(resolve, 100));
     await expectAsync(result).toBePending();
 
     rc = await testerA.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     await new Promise(resolve => setTimeout(resolve));
     await expectAsync(result).toBeResolvedTo(SQLite.SQLITE_OK);
@@ -267,7 +268,7 @@ describe('WebLocksMixin shared', () => {
   });
 
   it('should timeout on SHARED', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared', lockTimeout: 5 });
     const testerB = new Tester(null, null, { lockPolicy: 'shared', lockTimeout: 5 });
 
@@ -276,14 +277,14 @@ describe('WebLocksMixin shared', () => {
     await testerA.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_BUSY);
+    expect(rc).to.equal(SQLite.SQLITE_BUSY);
 
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
   });
 
   it('should timeout on EXCLUSIVE', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared', lockTimeout: 5 });
     const testerB = new Tester(null, null, { lockPolicy: 'shared', lockTimeout: 5 });
 
@@ -292,7 +293,7 @@ describe('WebLocksMixin shared', () => {
     await testerB.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
-    expect(rc).toBe(SQLite.SQLITE_BUSY);
+    expect(rc).to.equal(SQLite.SQLITE_BUSY);
 
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
     await testerB.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
@@ -310,32 +311,32 @@ describe('WebLocksMixin shared+hint', () => {
   });
 
   it('should allow multiple SHARED connections', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared+hint' });
     const testerB = new Tester(null, null, { lockPolicy: 'shared+hint' });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
     await testerB.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
   });
 
   it('should allow SHARED and RESERVED connections', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared+hint' });
     const testerB = new Tester(null, null, { lockPolicy: 'shared+hint' });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
@@ -343,21 +344,21 @@ describe('WebLocksMixin shared+hint', () => {
   });
 
   it('should return BUSY on RESERVED deadlock', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared+hint' });
     const testerB = new Tester(null, null, { lockPolicy: 'shared+hint' });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-    expect(rc).toBe(SQLite.SQLITE_BUSY);
+    expect(rc).to.equal(SQLite.SQLITE_BUSY);
 
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
@@ -365,25 +366,25 @@ describe('WebLocksMixin shared+hint', () => {
   });
 
   it('should block EXCLUSIVE until SHARED connections are released', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared+hint' });
     const testerB = new Tester(null, null, { lockPolicy: 'shared+hint' });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     const result = testerA.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
     await new Promise(resolve => setTimeout(resolve, 100));
     await expectAsync(result).toBePending();
 
     rc = await testerB.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     await new Promise(resolve => setTimeout(resolve));
     await expectAsync(result).toBeResolvedTo(SQLite.SQLITE_OK);
@@ -393,25 +394,25 @@ describe('WebLocksMixin shared+hint', () => {
   });
 
   it('should block SHARED until EXCLUSIVE connection is released', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared+hint' });
     const testerB = new Tester(null, null, { lockPolicy: 'shared+hint' });
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     rc = await testerA.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     const result = testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
     await new Promise(resolve => setTimeout(resolve, 100));
     await expectAsync(result).toBePending();
 
     rc = await testerA.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_OK);
+    expect(rc).to.equal(SQLite.SQLITE_OK);
 
     await new Promise(resolve => setTimeout(resolve));
     await expectAsync(result).toBeResolvedTo(SQLite.SQLITE_OK);
@@ -421,7 +422,7 @@ describe('WebLocksMixin shared+hint', () => {
   });
 
   it('should timeout on SHARED', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared+hint', lockTimeout: 5 });
     const testerB = new Tester(null, null, { lockPolicy: 'shared+hint', lockTimeout: 5 });
 
@@ -430,14 +431,14 @@ describe('WebLocksMixin shared+hint', () => {
     await testerA.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_SHARED);
-    expect(rc).toBe(SQLite.SQLITE_BUSY);
+    expect(rc).to.equal(SQLite.SQLITE_BUSY);
 
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
   });
 
   it('should timeout on EXCLUSIVE', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared+hint', lockTimeout: 5 });
     const testerB = new Tester(null, null, { lockPolicy: 'shared+hint', lockTimeout: 5 });
 
@@ -446,7 +447,7 @@ describe('WebLocksMixin shared+hint', () => {
     await testerB.jLock(1, SQLite.SQLITE_LOCK_RESERVED);
 
     rc = await testerB.jLock(1, SQLite.SQLITE_LOCK_EXCLUSIVE);
-    expect(rc).toBe(SQLite.SQLITE_BUSY);
+    expect(rc).to.equal(SQLite.SQLITE_BUSY);
 
     await testerA.jUnlock(1, SQLite.SQLITE_LOCK_NONE);
     await testerB.jUnlock(1, SQLite.SQLITE_LOCK_SHARED);
@@ -454,7 +455,7 @@ describe('WebLocksMixin shared+hint', () => {
   });
 
   it('should not deadlock with hint', async () => {
-    let rc;
+    let rc: number;
     const testerA = new Tester(null, null, { lockPolicy: 'shared+hint' });
     const testerB = new Tester(null, null, { lockPolicy: 'shared+hint' });
 
@@ -497,21 +498,21 @@ describe('WebLocksMixin shared+hint', () => {
   });
 });
 
-async function clearAllLocks() {
+async function clearAllLocks(): Promise<number> {
   await new Promise(resolve => setTimeout(resolve));
 
   let count = 0;
   while (true) {
     const locks = await navigator.locks.query();
-    const lockNames = [...locks.held, ...locks.pending]
+    const lockNames = [...locks.held!, ...locks.pending!]
       .map(lock => lock.name)
-      .filter(name => name.startsWith('lock##'));
+      .filter(name => name!.startsWith('lock##'));
     if (lockNames.length === 0) {
       break;
     }
 
     for (const name of new Set(lockNames)) {
-      await navigator.locks.request(name, { steal: true }, async lock => {
+      await navigator.locks.request(name!, { steal: true }, async lock => {
       });
       count++;
     }

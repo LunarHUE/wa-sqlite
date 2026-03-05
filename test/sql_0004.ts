@@ -1,7 +1,9 @@
 import * as Comlink from 'comlink';
+import { expect } from './helpers.ts';
+import { TestContext } from './TestContext.ts';
 
-export function sql_0004(context) {
-  const cleanup = [];
+export function sql_0004(context: TestContext) {
+  const cleanup: (() => Promise<void>)[] = [];
   beforeEach(async function() {
     cleanup.splice(0);
   });
@@ -24,17 +26,17 @@ export function sql_0004(context) {
           INSERT INTO t VALUES (1), (2), (3);
         `);
 
-        let sum;
+        let sum: number | undefined;
         await sqlite3.exec(db, `
           SELECT sum(x) FROM t;
-        `, Comlink.proxy(row => sum = row[0]));
-        expect(sum).toBe(6);
+        `, Comlink.proxy((row: unknown[]) => sum = row[0] as number));
+        expect(sum).to.equal(6);
 
-        let check;
+        let check: string | undefined;
         await sqlite3.exec(db, `
           PRAGMA integrity_check;
-        `, Comlink.proxy(row => check = row[0]));
-        expect(check).toBe('ok');
+        `, Comlink.proxy((row: unknown[]) => check = row[0] as string));
+        expect(check).to.equal('ok');
 
         // Begin a transaction but don't commit it.
         await sqlite3.exec(db, `
@@ -54,25 +56,25 @@ export function sql_0004(context) {
         const sqlite3 = proxyB.sqlite3;
         const db = await sqlite3.open_v2('demo');
 
-        let sum;
+        let sum: number | undefined;
         await sqlite3.exec(db, `
           SELECT sum(x) FROM t;
-        `, Comlink.proxy(row => sum = row[0]));
-        expect(sum).toBe(6);
+        `, Comlink.proxy((row: unknown[]) => sum = row[0] as number));
+        expect(sum).to.equal(6);
 
-        let check;
+        let check: string | undefined;
         await sqlite3.exec(db, `
           PRAGMA integrity_check;
-        `, Comlink.proxy(row => check = row[0]));
-        expect(check).toBe('ok');
+        `, Comlink.proxy((row: unknown[]) => check = row[0] as string));
+        expect(check).to.equal('ok');
 
         await sqlite3.exec(db, `
           INSERT INTO t VALUES (4), (5);
         `);
         await sqlite3.exec(db, `
           SELECT sum(x) FROM t;
-        `, Comlink.proxy(row => sum = row[0]));
-        expect(sum).toBe(15);
+        `, Comlink.proxy((row: unknown[]) => sum = row[0] as number));
+        expect(sum).to.equal(15);
       } finally {
         await context.destroy(proxyB);
       }

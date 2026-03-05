@@ -1,8 +1,10 @@
 import * as Comlink from 'comlink';
+import { expect } from './helpers.ts';
+import { TestContext } from './TestContext.ts';
 
-export function sql_0002(context) {
+export function sql_0002(context: TestContext) {
   describe('sql_0002', function() {
-    let proxy, sqlite3, db;
+    let proxy: any, sqlite3: any, db: any;
     beforeEach(async function() {
       proxy = await context.create();
       sqlite3 = proxy.sqlite3;
@@ -22,10 +24,10 @@ export function sql_0002(context) {
           SELECT n FROM numbers;
       `);
 
-      let nPagesBeforeVacuum;
+      let nPagesBeforeVacuum: number | undefined;
       await sqlite3.exec(db, `
         PRAGMA page_count;
-      `, Comlink.proxy(row => nPagesBeforeVacuum = row[0]));
+      `, Comlink.proxy((row: unknown[]) => nPagesBeforeVacuum = row[0] as number));
 
       await sqlite3.exec(db, `
         DELETE FROM t WHERE sqrt(n) != floor(sqrt(n));
@@ -35,18 +37,18 @@ export function sql_0002(context) {
         VACUUM;
       `);
 
-      let nPagesAfterVacuum;
+      let nPagesAfterVacuum: number | undefined;
       await sqlite3.exec(db, `
         PRAGMA page_count;
-      `, Comlink.proxy(row => nPagesAfterVacuum = row[0]));
+      `, Comlink.proxy((row: unknown[]) => nPagesAfterVacuum = row[0] as number));
 
-      expect(nPagesAfterVacuum).toBeLessThan(nPagesBeforeVacuum);
+      expect(nPagesAfterVacuum).to.be.below(nPagesBeforeVacuum!);
 
-      let checkStatus;
+      let checkStatus: string | undefined;
       await sqlite3.exec(db, `
         PRAGMA integrity_check;
-      `, Comlink.proxy(row => checkStatus = row[0]));
-      expect(checkStatus).toBe('ok');
+      `, Comlink.proxy((row: unknown[]) => checkStatus = row[0] as string));
+      expect(checkStatus).to.equal('ok');
     });
   });
 }

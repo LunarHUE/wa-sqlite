@@ -1,17 +1,19 @@
 import { chromeLauncher } from '@web/test-runner';
-import { jasmineTestRunnerConfig } from 'web-test-runner-jasmine';
+import { esbuildPlugin } from '@web/dev-server-esbuild';
 
 export default /** @type {import("@web/test-runner").TestRunnerConfig} */ ({
-  ...jasmineTestRunnerConfig(),
-  testFramework: {
-    config: {
-      defaultTimeoutInterval: 5 * 60 * 1000
-    },
-  },
+  files: ['./test/*.test.ts'],
+  nodeResolve: true,
   browserLogs: true,
   browserStartTimeout: 60_000,
-  nodeResolve: true,
-  files: ['./test/*.test.js'],
+  testFramework: {
+    config: {
+      timeout: 5 * 60 * 1000,
+    },
+  },
+  plugins: [
+    esbuildPlugin({ ts: true }),
+  ],
   concurrency: 1,
   concurrentBrowsers: 1,
   browsers: [

@@ -3,17 +3,25 @@
 import * as Comlink from 'comlink';
 import * as SQLite from '../src/sqlite-api.js';
 
-const BUILDS = new Map([
+const BUILDS = new Map<string, string>([
   ['default', '../dist/wa-sqlite.mjs'],
   ['asyncify', '../dist/wa-sqlite-async.mjs'],
   ['jspi', '../dist/wa-sqlite-jspi.mjs'],
 ]);
 
 const MODULE = Symbol('module');
-const VFS_CONFIGS = new Map([
+
+interface VFSConfig {
+  name: string;
+  vfsModule: string | null;
+  vfsClass?: string;
+  vfsArgs?: unknown[];
+}
+
+const VFS_CONFIGS = new Map<string, VFSConfig>([
   {
     name: 'default',
-    vfsModule: null
+    vfsModule: null,
   },
   {
     name: 'AccessHandlePoolVFS',
@@ -64,10 +72,10 @@ const searchParams = new URLSearchParams(location.search);
 maybeReset().then(async () => {
   const buildName = searchParams.get('build') || BUILDS.keys().next().value;
   const configName = searchParams.get('config') || VFS_CONFIGS.keys().next().value;
-  const config = VFS_CONFIGS.get(configName);
+  const config = VFS_CONFIGS.get(configName)!;
 
   // Instantiate SQLite.
-  const { default: moduleFactory } = await import(BUILDS.get(buildName));
+  const { default: moduleFactory } = await import(BUILDS.get(buildName)!);
   const module = await moduleFactory();
   const sqlite3 = SQLite.Factory(module);
 
@@ -75,7 +83,7 @@ maybeReset().then(async () => {
     if (config.vfsModule) {
       // Create the VFS and register it as the default file system.
       const namespace = await import(config.vfsModule);
-      const className = config.vfsClass ?? config.vfsModule.match(/([^/]+)\.js$/)[1];
+      const className = config.vfsClass ?? config.vfsModule.match(/([^/]+)\.js$/)![1];
       const vfsArgs = (config.vfsArgs ?? ['demo', MODULE])
         .map(arg => arg === MODULE ? module : arg);
       const vfs = await namespace[className].create(...vfsArgs);
@@ -93,8 +101,8 @@ maybeReset().then(async () => {
 
       const value = Reflect.get(target, p, receiver);
       if (typeof value === 'function') {
-        return async (...args) => {
-          const result = await value.apply(target, args);
+        return async (...args: unknown[]) => {
+          const result = await (value as Function).apply(target, args);
           if (p === 'statements') {
             return Comlink.proxy(result);
           }
@@ -108,18 +116,18 @@ maybeReset().then(async () => {
     get(target, p, receiver) {
       const value = Reflect.get(target, p, receiver);
       if (typeof value === 'function') {
-        return async (...args) => {
+        return async (...args: unknown[]) => {
           if (p === 'jRead') {
             // The read buffer Uint8Array will be passed by proxy so all
             // access is asynchronous. Pass a local buffer to the VFS
             // and copy the local buffer to the proxy on completion.
-            const proxyBuffer = args[1];
+            const proxyBuffer = args[1] as any;
             args[1] = new Uint8Array(await proxyBuffer.length);
-            const result = await value.apply(target, args);
+            const result = await (value as Function).apply(target, args);
             await proxyBuffer.set(args[1]);
             return result;
           }
-          return value.apply(target, args);
+          return (value as Function).apply(target, args);
         };
       }
     }
@@ -140,8 +148,8 @@ maybeReset().then(async () => {
 async function maybeReset() {
   if (searchParams.get('reset') !== 'true') {
     return;
-  }  
-  
+  }
+
   // Limit the amount of time in this function.
   const abortController = new AbortController();
   setTimeout(() => abortController.abort(), 10_000);
@@ -158,7 +166,7 @@ async function maybeReset() {
           await root.removeEntry(name, { recursive: true });
         }
         opfsDeleted = true;
-      } catch (e) {
+      } catch (e: any) {
         // A NoModificationAllowedError is thrown if an entry can't be
         // deleted because it isn't closed. Just try again.
         if (e.name === 'NoModificationAllowedError') {
@@ -174,22 +182,22 @@ async function maybeReset() {
   const dbList = indexedDB.databases ?
     await indexedDB.databases() :
     INDEXEDDB_DBNAMES.map(name => ({ name }));
-  await Promise.all(dbList.map(({name}) => {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.deleteDatabase(name);
-      request.onsuccess = resolve;
-      request.onerror = reject;
+  await Promise.all(dbList.map(({ name }) => {
+    return new Promise<void>((resolve, reject) => {
+      const request = indexedDB.deleteDatabase(name!);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   }));
 }
 
-function cvtErrorToCloneable(e) {
+function cvtErrorToCloneable(e: unknown) {
   if (e instanceof Error) {
     const props = new Set([
-      ...['name', 'message', 'stack'].filter(k => e[k] !== undefined),
+      ...['name', 'message', 'stack'].filter(k => (e as any)[k] !== undefined),
       ...Object.getOwnPropertyNames(e)
     ]);
-    return Object.fromEntries(Array.from(props, k =>  [k, e[k]])
+    return Object.fromEntries(Array.from(props, k => [k, (e as any)[k]])
       .filter(([_, v]) => {
         // Skip any non-cloneable properties.
         try {

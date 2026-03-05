@@ -1,9 +1,9 @@
-import { TestContext } from "./TestContext.js";
-import { sql_0001 } from "./sql_0001.js";
-import { sql_0002 } from "./sql_0002.js";
-import { sql_0003 } from "./sql_0003.js";
-import { sql_0004 } from "./sql_0004.js";
-import { sql_0005 } from "./sql_0005.js";
+import { TestContext } from './TestContext.ts';
+import { sql_0001 } from './sql_0001.ts';
+import { sql_0002 } from './sql_0002.ts';
+import { sql_0003 } from './sql_0003.ts';
+import { sql_0004 } from './sql_0004.ts';
+import { sql_0005 } from './sql_0005.ts';
 
 const ALL_BUILDS = ['default', 'asyncify', 'jspi'];
 const ASYNC_BUILDS = ['asyncify', 'jspi'];
@@ -11,8 +11,7 @@ const ASYNC_BUILDS = ['asyncify', 'jspi'];
 // Not all browsers support JSPI yet.
 const supportsJSPI = await TestContext.supportsJSPI();
 
-/** @type {Map<string, string[]>} */
-const CONFIGS = new Map([
+const CONFIGS = new Map<string, string[]>([
   ['', ALL_BUILDS],
   ['MemoryVFS', ALL_BUILDS],
   ['AccessHandlePoolVFS', ALL_BUILDS],
@@ -44,7 +43,7 @@ describe('SQL', function() {
   }
 });
 
-function sqlSpecs(build, config) {
+function sqlSpecs(build: string, config: string) {
   const context = new TestContext({ build, config });
 
   sql_0001(context);
