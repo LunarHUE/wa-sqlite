@@ -1,0 +1,24 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build:wasm": {
+      "inputs": [
+        "src/wasm-src/**",
+        "flake.nix",
+        "overlay.wa-sqlite/**"
+      ],
+      "outputs": ["dist/*.mjs", "dist/*.wasm"]
+    },
+    "build:ts": {
+      "inputs": ["src/**/*.ts", "tsconfig.build.json"],
+      "outputs": ["dist/**/*.js", "dist/**/*.d.ts"]
+    },
+    "build": {
+      "dependsOn": ["build:wasm", "build:ts"]
+    },
+    "test": {
+      "dependsOn": ["build:wasm"],
+      "inputs": ["src/**/*.ts", "test/**/*.ts"]
+    }
+  }
+}

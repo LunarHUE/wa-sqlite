@@ -2,28 +2,26 @@
   "name": "@lunarhue/react-native-web-wa-sqlite",
   "version": "1.0.14",
   "type": "module",
-  "main": "src/sqlite-api.ts",
+  "main": "dist/sqlite-api.js",
   "exports": {
-    ".": "./src/sqlite-api.ts",
+    ".": {
+      "types": "./dist/sqlite-api.d.ts",
+      "import": "./dist/sqlite-api.js"
+    },
     "./dist/wa-sqlite.mjs": "./dist/wa-sqlite.mjs",
     "./dist/wa-sqlite-async.mjs": "./dist/wa-sqlite-async.mjs",
     "./dist/wa-sqlite-jspi.mjs": "./dist/wa-sqlite-jspi.mjs"
   },
-  "types": "src/types/index.d.ts",
+  "types": "dist/sqlite-api.d.ts",
   "files": [
-    "src/sqlite-constants.ts",
-    "src/sqlite-api.ts",
-    "src/types/*",
-    "src/FacadeVFS.ts",
-    "src/VFS.ts",
-    "src/WebLocksMixin.ts",
-    "src/vfs/*",
-    "src/wasm-src/*",
-    "dist/*",
-    "test/*"
+    "dist",
+    "src/types",
+    "test"
   ],
   "scripts": {
-    "build": "node scripts/docker-build.mjs",
+    "build": "turbo run build",
+    "build:wasm": "node scripts/docker-build.mjs",
+    "build:ts": "tsc -p tsconfig.build.json",
     "build-docs": "typedoc",
     "start": "web-dev-server",
     "test": "web-test-runner",
@@ -39,6 +37,7 @@
     "@web/test-runner-core": "^0.13.4",
     "comlink": "^4.4.1",
     "monaco-editor": "^0.34.1",
+    "turbo": "^2.8.13",
     "typedoc": "^0.25.7",
     "typescript": "^5.3.3"
   },
