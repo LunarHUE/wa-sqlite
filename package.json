@@ -1,6 +1,6 @@
 {
   "name": "@lunarhue/react-native-web-wa-sqlite",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "type": "module",
   "main": "src/sqlite-api.js",
   "types": "src/types/index.d.ts",
@@ -33,13 +33,5 @@
     "typescript": "^5.3.3",
     "web-test-runner-jasmine": "^0.0.6"
   },
-  "dependenciesMeta": {
-    "monaco-editor@0.34.1": {
-      "unplugged": true
-    },
-    "web-test-runner-jasmine@0.0.6": {
-      "unplugged": true
-    }
-  },
-  "packageManager": "yarn@4.0.2"
+  "packageManager": "pnpm@10.6.1"
 }
