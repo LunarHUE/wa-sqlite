@@ -1,19 +1,14 @@
 // Copyright 2024 Roy T. Hashimoto. All Rights Reserved.
-import { FacadeVFS } from '../FacadeVFS.js';
-import * as VFS from '../VFS.js';
-import { WebLocksMixin } from '../WebLocksMixin.js';
+import { FacadeVFS } from '../FacadeVFS';
+import * as VFS from '../VFS';
+import { WebLocksMixin } from '../WebLocksMixin';
 
 const LOCK_NOTIFY_INTERVAL = 1000;
 
 const hasUnsafeAccessHandle =
   globalThis.FileSystemSyncAccessHandle.prototype.hasOwnProperty('mode');
 
-/**
- * @param {string} pathname 
- * @param {boolean} create 
- * @returns {Promise<[FileSystemDirectoryHandle, string]>}
- */
-async function getPathComponents(pathname, create) {
+async function getPathComponents(pathname: string, create: boolean): Promise<[FileSystemDirectoryHandle, string]> {
   const [_, directories, filename] = pathname.match(/[/]?(.*)[/](.*)$/);
 
   let directoryHandle = await navigator.storage.getDirectory();
@@ -23,64 +18,49 @@ async function getPathComponents(pathname, create) {
     }
   }
   return [directoryHandle, filename];
-};
+}
 
 class File {
-  /** @type {string} */ pathname;
-  /** @type {number} */ flags;
-  /** @type {FileSystemFileHandle} */ fileHandle;
-  /** @type {FileSystemSyncAccessHandle} */ accessHandle;
+  pathname: string;
+  flags: number;
+  fileHandle: FileSystemFileHandle;
+  accessHandle: FileSystemSyncAccessHandle;
 
-  // The rest of the properties are for platforms without readwrite-unsafe
-  // access handles. Only one connection can have an open access handle
-  // so coordination is needed in addition to the SQLite locking model.
-  //
-  // Opening and closing the access handle is expensive so we leave the
-  // handle open unless another connection signals on BroadcastChannel.
-  /** @type {BroadcastChannel} */ handleRequestChannel;
-  /** @type {function} */ handleLockReleaser = null;
-  /** @type {boolean} */ isHandleRequested = false;
-  /** @type {boolean} */ isFileLocked = false;
+  handleRequestChannel: BroadcastChannel;
+  handleLockReleaser: (() => void) | null = null;
+  isHandleRequested: boolean = false;
+  isFileLocked: boolean = false;
 
-  // SQLite makes one read on file open that is not protected by a lock.
-  // This needs to be handled as a special case.
-  /** @type {function} */ openLockReleaser = null;
+  openLockReleaser: (() => void) | null = null;
 
-  constructor(pathname, flags) {
+  constructor(pathname: string, flags: number) {
     this.pathname = pathname;
     this.flags = flags;
   }
 }
 
 export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
-  /** @type {Map<number, File>} */ mapIdToFile = new Map();
-  lastError = null;
+  mapIdToFile: Map<number, File> = new Map();
+  lastError: any = null;
 
-  log = null;
+  log: any = null;
 
-  static async create(name, module, options) {
+  static async create(name: string, module: any, options?: any): Promise<OPFSAdaptiveVFS> {
     const vfs = new OPFSAdaptiveVFS(name, module, options);
     await vfs.isReady();
     return vfs;
   }
 
-  constructor(name, module, options = {}) {
+  constructor(name: string, module: any, options: any = {}) {
     super(name, module, options);
   }
-  
-  getFilename(fileId) {
+
+  getFilename(fileId: number): string {
     const pathname = this.mapIdToFile.get(fileId).pathname;
-    return `OPFS:${pathname}`
+    return `OPFS:${pathname}`;
   }
 
-  /**
-   * @param {string?} zName 
-   * @param {number} fileId 
-   * @param {number} flags 
-   * @param {DataView} pOutFlags 
-   * @returns {Promise<number>}
-   */
-  async jOpen(zName, fileId, flags, pOutFlags) {
+  async jOpen(zName: string | null, fileId: number, flags: number, pOutFlags: DataView): Promise<number> {
     try {
       const url = new URL(zName || Math.random().toString(36).slice(2), 'file://');
       const pathname = url.pathname;
@@ -95,8 +75,6 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
       if ((flags & VFS.SQLITE_OPEN_MAIN_DB) && !hasUnsafeAccessHandle) {
         file.handleRequestChannel = new BroadcastChannel(this.getFilename(fileId));
 
-        // Acquire the access handle lock. The first read of a database
-        // file is done outside xLock/xUnlock so we get that lock here.
         function notify() {
           file.handleRequestChannel.postMessage(null);
         }
@@ -108,7 +86,7 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
             clearInterval(notifyId);
             if (!lock) return reject();
             return new Promise(release => {
-              resolve(release);
+              resolve(release as () => void);
             });
           });
         });
@@ -119,7 +97,7 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
       file.accessHandle = await file.fileHandle.createSyncAccessHandle({
         mode: 'readwrite-unsafe'
       });
-  
+
       pOutFlags.setInt32(0, flags, true);
       return VFS.SQLITE_OK;
     } catch (e) {
@@ -128,16 +106,11 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {string} zName 
-   * @param {number} syncDir 
-   * @returns {Promise<number>}
-   */
-  async jDelete(zName, syncDir) {
+  async jDelete(zName: string, syncDir: number): Promise<number> {
     try {
       const url = new URL(zName, 'file://');
       const pathname = url.pathname;
-   
+
       const [directoryHandle, name] = await getPathComponents(pathname, false);
       const result = directoryHandle.removeEntry(name, { recursive: false });
       if (syncDir) {
@@ -149,22 +122,16 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {string} zName 
-   * @param {number} flags 
-   * @param {DataView} pResOut 
-   * @returns {Promise<number>}
-   */
-  async jAccess(zName, flags, pResOut) {
+  async jAccess(zName: string, flags: number, pResOut: DataView): Promise<number> {
     try {
       const url = new URL(zName, 'file://');
       const pathname = url.pathname;
 
       const [directoryHandle, dbName] = await getPathComponents(pathname, false);
-      const fileHandle = await directoryHandle.getFileHandle(dbName, { create: false });
+      await directoryHandle.getFileHandle(dbName, { create: false });
       pResOut.setInt32(0, 1, true);
       return VFS.SQLITE_OK;
-    } catch (e) {
+    } catch (e: any) {
       if (e.name === 'NotFoundError') {
         pResOut.setInt32(0, 0, true);
         return VFS.SQLITE_OK;
@@ -174,11 +141,7 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @returns {Promise<number>}
-   */
-  async jClose(fileId) {
+  async jClose(fileId: number): Promise<number> {
     try {
       const file = this.mapIdToFile.get(fileId);
       this.mapIdToFile.delete(fileId);
@@ -194,22 +157,12 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {Uint8Array} pData 
-   * @param {number} iOffset
-   * @returns {number}
-   */
-  jRead(fileId, pData, iOffset) {
+  jRead(fileId: number, pData: Uint8Array, iOffset: number): number {
     try {
       const file = this.mapIdToFile.get(fileId);
 
-      // On Chrome (at least), passing pData to accessHandle.read() is
-      // an error because pData is a Proxy of a Uint8Array. Calling
-      // subarray() produces a real Uint8Array and that works.
       const bytesRead = file.accessHandle.read(pData.subarray(), { at: iOffset });
       if (file.openLockReleaser) {
-        // We obtained the access handle on file open.
         file.accessHandle.close();
         file.accessHandle = null;
         file.openLockReleaser();
@@ -228,19 +181,10 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {Uint8Array} pData 
-   * @param {number} iOffset
-   * @returns {number}
-   */
-  jWrite(fileId, pData, iOffset) {
+  jWrite(fileId: number, pData: Uint8Array, iOffset: number): number {
     try {
       const file = this.mapIdToFile.get(fileId);
 
-      // On Chrome (at least), passing pData to accessHandle.write() is
-      // an error because pData is a Proxy of a Uint8Array. Calling
-      // subarray() produces a real Uint8Array and that works.
       file.accessHandle.write(pData.subarray(), { at: iOffset });
       return VFS.SQLITE_OK;
     } catch (e) {
@@ -249,12 +193,7 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {number} iSize 
-   * @returns {number}
-   */
-  jTruncate(fileId, iSize) {
+  jTruncate(fileId: number, iSize: number): number {
     try {
       const file = this.mapIdToFile.get(fileId);
       file.accessHandle.truncate(iSize);
@@ -265,12 +204,7 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {number} flags 
-   * @returns {number}
-   */
-  jSync(fileId, flags) {
+  jSync(fileId: number, flags: number): number {
     try {
       const file = this.mapIdToFile.get(fileId);
       file.accessHandle.flush();
@@ -281,12 +215,7 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {DataView} pSize64 
-   * @returns {number}
-   */
-  jFileSize(fileId, pSize64) {
+  jFileSize(fileId: number, pSize64: DataView): number {
     try {
       const file = this.mapIdToFile.get(fileId);
       const size = file.accessHandle.getSize();
@@ -298,40 +227,28 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {number} lockType 
-   * @returns {Promise<number>}
-   */
-  async jLock(fileId, lockType) {
+  async jLock(fileId: number, lockType: number): Promise<number> {
     if (hasUnsafeAccessHandle) return super.jLock(fileId, lockType);
 
     const file = this.mapIdToFile.get(fileId);
     if (!file.isFileLocked) {
       file.isFileLocked = true;
       if (!file.handleLockReleaser) {
-        // Listen for other connections wanting the access handle.
         file.handleRequestChannel.onmessage = event => {
-          if(!file.isFileLocked) {
-            // We have the access handle but the file is not locked.
-            // Release the access handle for the requester.
+          if (!file.isFileLocked) {
             file.accessHandle.close();
             file.accessHandle = null;
             file.handleLockReleaser();
             file.handleLockReleaser = null;
             this.log?.('access handle requested and released');
           } else {
-            // We're still using the access handle, so mark it to be
-            // released when we're done.
             file.isHandleRequested = true;
             this.log?.('access handle requested');
           }
           file.handleRequestChannel.onmessage = null;
         };
 
-        // We don't have the access handle. First acquire the lock.
         file.handleLockReleaser = await new Promise((resolve, reject) => {
-          // Tell everyone we want the access handle.
           function notify() {
             file.handleRequestChannel.postMessage(null);
           }
@@ -342,33 +259,25 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
             clearInterval(notifyId);
             if (!lock) return reject();
             return new Promise(release => {
-              resolve(release);
+              resolve(release as () => void);
             });
           });
         });
 
-        // The access handle should now be available.
         file.accessHandle = await file.fileHandle.createSyncAccessHandle();
         this.log?.('access handle acquired');
       }
-
     }
     return VFS.SQLITE_OK;
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {number} lockType 
-   * @returns {Promise<number>}
-   */
-  async jUnlock(fileId, lockType) {
+  async jUnlock(fileId: number, lockType: number): Promise<number> {
     if (hasUnsafeAccessHandle) return super.jUnlock(fileId, lockType);
 
     if (lockType === VFS.SQLITE_LOCK_NONE) {
       const file = this.mapIdToFile.get(fileId);
       if (file.isHandleRequested) {
         if (file.handleLockReleaser) {
-          // Another connection wants the access handle.
           file.accessHandle.close();
           file.accessHandle = null;
           file.handleLockReleaser();
@@ -382,13 +291,7 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
     return VFS.SQLITE_OK;
   }
 
-  /**
-   * @param {number} fileId
-   * @param {number} op
-   * @param {DataView} pArg
-   * @returns {number|Promise<number>}
-   */
-  jFileControl(fileId, op, pArg) {
+  jFileControl(fileId: number, op: number, pArg: DataView): number | Promise<number> {
     try {
       const file = this.mapIdToFile.get(fileId);
       switch (op) {
@@ -399,7 +302,7 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
           switch (key.toLowerCase()) {
             case 'journal_mode':
               if (value &&
-                  !hasUnsafeAccessHandle && 
+                  !hasUnsafeAccessHandle &&
                   !['off', 'memory', 'delete', 'wal'].includes(value.toLowerCase())) {
                 throw new Error('journal_mode must be "off", "memory", "delete", or "wal"');
               }
@@ -416,18 +319,18 @@ export class OPFSAdaptiveVFS extends WebLocksMixin(FacadeVFS) {
     return super.jFileControl(fileId, op, pArg);
   }
 
-  jGetLastError(zBuf) {
+  jGetLastError(zBuf: Uint8Array): number {
     if (this.lastError) {
       console.error(this.lastError);
       const outputArray = zBuf.subarray(0, zBuf.byteLength - 1);
       const { written } = new TextEncoder().encodeInto(this.lastError.message, outputArray);
       zBuf[written] = 0;
     }
-    return VFS.SQLITE_OK
+    return VFS.SQLITE_OK;
   }
 }
 
-function extractString(dataView, offset) {
+function extractString(dataView: DataView, offset: number): string | null {
   const p = dataView.getUint32(offset, true);
   if (p) {
     const chars = new Uint8Array(dataView.buffer, p);

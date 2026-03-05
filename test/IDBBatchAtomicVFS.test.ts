@@ -7,8 +7,8 @@ import { vfs_xWrite } from './vfs_xWrite.ts';
 import { expect } from './helpers.ts';
 
 import SQLiteESMFactory from '../dist/wa-sqlite-async.mjs';
-import * as SQLite from '../src/sqlite-api.js';
-import { IDBBatchAtomicVFS } from '../src/examples/IDBBatchAtomicVFS.js';
+import * as SQLite from '../src/sqlite-api';
+import { IDBBatchAtomicVFS } from '../src/vfs/IDBBatchAtomicVFS';
 
 const CONFIG = 'IDBBatchAtomicVFS';
 const BUILDS = ['asyncify', 'jspi'];

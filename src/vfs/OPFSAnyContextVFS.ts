@@ -1,14 +1,9 @@
 // Copyright 2024 Roy T. Hashimoto. All Rights Reserved.
-import { FacadeVFS } from '../FacadeVFS.js';
-import * as VFS from '../VFS.js';
-import { WebLocksMixin } from '../WebLocksMixin.js';
+import { FacadeVFS } from '../FacadeVFS';
+import * as VFS from '../VFS';
+import { WebLocksMixin } from '../WebLocksMixin';
 
-/**
- * @param {string} pathname 
- * @param {boolean} create 
- * @returns {Promise<[FileSystemDirectoryHandle, string]>}
- */
-async function getPathComponents(pathname, create) {
+async function getPathComponents(pathname: string, create: boolean): Promise<[FileSystemDirectoryHandle, string]> {
   const [_, directories, filename] = pathname.match(/[/]?(.*)[/](.*)$/);
 
   let directoryHandle = await navigator.storage.getDirectory();
@@ -18,50 +13,43 @@ async function getPathComponents(pathname, create) {
     }
   }
   return [directoryHandle, filename];
-};
+}
 
 class File {
-  /** @type {string} */ pathname;
-  /** @type {number} */ flags;
-  /** @type {FileSystemFileHandle} */ fileHandle;
-  /** @type {Blob?} */ blob;
-  /** @type {FileSystemWritableFileStream?} */ writable;
+  pathname: string;
+  flags: number;
+  fileHandle: FileSystemFileHandle;
+  blob: Blob | null = null;
+  writable: FileSystemWritableFileStream | null = null;
 
-  constructor(pathname, flags) {
+  constructor(pathname: string, flags: number) {
     this.pathname = pathname;
     this.flags = flags;
   }
 }
 
 export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
-  /** @type {Map<number, File>} */ mapIdToFile = new Map();
-  lastError = null;
+  mapIdToFile: Map<number, File> = new Map();
+  lastError: any = null;
 
-  log = null;
+  log: any = null;
 
-  static async create(name, module, options) {
+  static async create(name: string, module: any, options?: any): Promise<OPFSAnyContextVFS> {
     const vfs = new OPFSAnyContextVFS(name, module, options);
     await vfs.isReady();
     return vfs;
   }
 
-  constructor(name, module, options = {}) {
+  constructor(name: string, module: any, options: any = {}) {
     super(name, module, options);
   }
-  
-  getFilename(fileId) {
+
+  getFilename(fileId: number): string {
     const pathname = this.mapIdToFile.get(fileId).pathname;
-    return `OPFS:${pathname}`
+    return `OPFS:${pathname}`;
   }
 
-  /**
-   * @param {string?} zName 
-   * @param {number} fileId 
-   * @param {number} flags 
-   * @param {DataView} pOutFlags 
-   * @returns {Promise<number>}
-   */
-  async jOpen(zName, fileId, flags, pOutFlags) {
+  async jOpen(zName: string | null, fileId: number, flags: number, pOutFlags: DataView): Promise<number> {
     try {
       const url = new URL(zName || Math.random().toString(36).slice(2), 'file://');
       const pathname = url.pathname;
@@ -72,7 +60,7 @@ export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
       const create = !!(flags & VFS.SQLITE_OPEN_CREATE);
       const [directoryHandle, filename] = await getPathComponents(pathname, create);
       file.fileHandle = await directoryHandle.getFileHandle(filename, { create });
-  
+
       pOutFlags.setInt32(0, flags, true);
       return VFS.SQLITE_OK;
     } catch (e) {
@@ -81,16 +69,11 @@ export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {string} zName 
-   * @param {number} syncDir 
-   * @returns {Promise<number>}
-   */
-  async jDelete(zName, syncDir) {
+  async jDelete(zName: string, syncDir: number): Promise<number> {
     try {
       const url = new URL(zName, 'file://');
       const pathname = url.pathname;
-   
+
       const [directoryHandle, name] = await getPathComponents(pathname, false);
       const result = directoryHandle.removeEntry(name, { recursive: false });
       if (syncDir) {
@@ -102,22 +85,16 @@ export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {string} zName 
-   * @param {number} flags 
-   * @param {DataView} pResOut 
-   * @returns {Promise<number>}
-   */
-  async jAccess(zName, flags, pResOut) {
+  async jAccess(zName: string, flags: number, pResOut: DataView): Promise<number> {
     try {
       const url = new URL(zName, 'file://');
       const pathname = url.pathname;
 
       const [directoryHandle, dbName] = await getPathComponents(pathname, false);
-      const fileHandle = await directoryHandle.getFileHandle(dbName, { create: false });
+      await directoryHandle.getFileHandle(dbName, { create: false });
       pResOut.setInt32(0, 1, true);
       return VFS.SQLITE_OK;
-    } catch (e) {
+    } catch (e: any) {
       if (e.name === 'NotFoundError') {
         pResOut.setInt32(0, 0, true);
         return VFS.SQLITE_OK;
@@ -127,11 +104,7 @@ export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @returns {Promise<number>}
-   */
-  async jClose(fileId) {
+  async jClose(fileId: number): Promise<number> {
     try {
       const file = this.mapIdToFile.get(fileId);
       this.mapIdToFile.delete(fileId);
@@ -147,13 +120,7 @@ export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {Uint8Array} pData 
-   * @param {number} iOffset
-   * @returns {Promise<number>}
-   */
-  async jRead(fileId, pData, iOffset) {
+  async jRead(fileId: number, pData: Uint8Array, iOffset: number): Promise<number> {
     try {
       const file = this.mapIdToFile.get(fileId);
 
@@ -184,13 +151,7 @@ export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {Uint8Array} pData 
-   * @param {number} iOffset
-   * @returns {Promise<number>}
-   */
-  async jWrite(fileId, pData, iOffset) {
+  async jWrite(fileId: number, pData: Uint8Array, iOffset: number): Promise<number> {
     try {
       const file = this.mapIdToFile.get(fileId);
 
@@ -208,12 +169,7 @@ export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {number} iSize 
-   * @returns {Promise<number>}
-   */
-  async jTruncate(fileId, iSize) {
+  async jTruncate(fileId: number, iSize: number): Promise<number> {
     try {
       const file = this.mapIdToFile.get(fileId);
 
@@ -229,12 +185,7 @@ export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {number} flags 
-   * @returns {Promise<number>}
-   */
-  async jSync(fileId, flags) {
+  async jSync(fileId: number, flags: number): Promise<number> {
     try {
       const file = this.mapIdToFile.get(fileId);
       await file.writable?.close();
@@ -247,12 +198,7 @@ export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {DataView} pSize64 
-   * @returns {Promise<number>}
-   */
-  async jFileSize(fileId, pSize64) {
+  async jFileSize(fileId: number, pSize64: DataView): Promise<number> {
     try {
       const file = this.mapIdToFile.get(fileId);
 
@@ -272,29 +218,21 @@ export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
     }
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {number} lockType 
-   * @returns {Promise<number>}
-   */
-  async jLock(fileId, lockType) {
+  async jLock(fileId: number, lockType: number): Promise<number> {
     if (lockType === VFS.SQLITE_LOCK_SHARED) {
-      // Make sure to get a current readable view of the file.
       const file = this.mapIdToFile.get(fileId);
       file.blob = null;
     }
-
-    // Call the actual unlock implementation.
     return super.jLock(fileId, lockType);
   }
 
-  jGetLastError(zBuf) {
+  jGetLastError(zBuf: Uint8Array): number {
     if (this.lastError) {
       console.error(this.lastError);
       const outputArray = zBuf.subarray(0, zBuf.byteLength - 1);
       const { written } = new TextEncoder().encodeInto(this.lastError.message, outputArray);
       zBuf[written] = 0;
     }
-    return VFS.SQLITE_OK
+    return VFS.SQLITE_OK;
   }
 }

@@ -1,46 +1,42 @@
 // Copyright 2024 Roy T. Hashimoto. All Rights Reserved.
-import { FacadeVFS } from '../FacadeVFS.js';
-import * as VFS from '../VFS.js';
+import { FacadeVFS } from '../FacadeVFS';
+import * as VFS from '../VFS';
+
+interface MemoryFile {
+  pathname: string;
+  flags: number;
+  size: number;
+  data: ArrayBuffer;
+}
 
 // Sample in-memory filesystem.
 export class MemoryVFS extends FacadeVFS {
-  // Map of existing files, keyed by filename.
-  mapNameToFile = new Map();
+  mapNameToFile: Map<string, MemoryFile> = new Map();
+  mapIdToFile: Map<number, MemoryFile> = new Map();
 
-  // Map of open files, keyed by id (sqlite3_file pointer).
-  mapIdToFile = new Map();
-
-  static async create(name, module) {
+  static async create(name: string, module: any): Promise<MemoryVFS> {
     const vfs = new MemoryVFS(name, module);
     await vfs.isReady();
     return vfs;
   }
 
-  constructor(name, module) {
+  constructor(name: string, module: any) {
     super(name, module);
   }
 
-  close() {
+  close(): void {
     for (const fileId of this.mapIdToFile.keys()) {
       this.jClose(fileId);
     }
   }
 
-  /**
-   * @param {string?} filename 
-   * @param {number} fileId 
-   * @param {number} flags 
-   * @param {DataView} pOutFlags 
-   * @returns {number|Promise<number>}
-   */
-  jOpen(filename, fileId, flags, pOutFlags) {
+  jOpen(filename: string | null, fileId: number, flags: number, pOutFlags: DataView): number | Promise<number> {
     const url = new URL(filename || Math.random().toString(36).slice(2), 'file://');
     const pathname = url.pathname;
 
     let file = this.mapNameToFile.get(pathname);
     if (!file) {
       if (flags & VFS.SQLITE_OPEN_CREATE) {
-        // Create a new file object.
         file = {
           pathname,
           flags,
@@ -53,17 +49,12 @@ export class MemoryVFS extends FacadeVFS {
       }
     }
 
-    // Put the file in the opened files map.
     this.mapIdToFile.set(fileId, file);
     pOutFlags.setInt32(0, flags, true);
     return VFS.SQLITE_OK;
   }
 
-  /**
-   * @param {number} fileId 
-   * @returns {number|Promise<number>}
-   */
-  jClose(fileId) {
+  jClose(fileId: number): number | Promise<number> {
     const file = this.mapIdToFile.get(fileId);
     this.mapIdToFile.delete(fileId);
 
@@ -73,16 +64,9 @@ export class MemoryVFS extends FacadeVFS {
     return VFS.SQLITE_OK;
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {Uint8Array} pData 
-   * @param {number} iOffset
-   * @returns {number|Promise<number>}
-   */
-  jRead(fileId, pData, iOffset) {
+  jRead(fileId: number, pData: Uint8Array, iOffset: number): number | Promise<number> {
     const file = this.mapIdToFile.get(fileId);
 
-    // Clip the requested read to the file boundary.
     const bgn = Math.min(iOffset, file.size);
     const end = Math.min(iOffset + pData.byteLength, file.size);
     const nBytes = end - bgn;
@@ -92,83 +76,48 @@ export class MemoryVFS extends FacadeVFS {
     }
 
     if (nBytes < pData.byteLength) {
-      // Zero unused area of read buffer.
       pData.fill(0, nBytes);
       return VFS.SQLITE_IOERR_SHORT_READ;
     }
     return VFS.SQLITE_OK;
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {Uint8Array} pData 
-   * @param {number} iOffset
-   * @returns {number|Promise<number>}
-   */
-  jWrite(fileId, pData, iOffset) {
+  jWrite(fileId: number, pData: Uint8Array, iOffset: number): number | Promise<number> {
     const file = this.mapIdToFile.get(fileId);
     if (iOffset + pData.byteLength > file.data.byteLength) {
-      // Resize the ArrayBuffer to hold more data.
       const newSize = Math.max(iOffset + pData.byteLength, 2 * file.data.byteLength);
       const data = new ArrayBuffer(newSize);
       new Uint8Array(data).set(new Uint8Array(file.data, 0, file.size));
       file.data = data;
     }
 
-    // Copy data.
     new Uint8Array(file.data, iOffset, pData.byteLength).set(pData.subarray());
     file.size = Math.max(file.size, iOffset + pData.byteLength);
     return VFS.SQLITE_OK;
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {number} iSize 
-   * @returns {number|Promise<number>}
-   */
-  jTruncate(fileId, iSize) {
+  jTruncate(fileId: number, iSize: number): number | Promise<number> {
     const file = this.mapIdToFile.get(fileId);
-
-    // For simplicity we don't make the ArrayBuffer smaller.
     file.size = Math.min(file.size, iSize);
     return VFS.SQLITE_OK;
   }
 
-  /**
-   * @param {number} fileId 
-   * @param {DataView} pSize64 
-   * @returns {number|Promise<number>}
-   */
-  jFileSize(fileId, pSize64) {
+  jFileSize(fileId: number, pSize64: DataView): number | Promise<number> {
     const file = this.mapIdToFile.get(fileId);
-
     pSize64.setBigInt64(0, BigInt(file.size), true);
     return VFS.SQLITE_OK;
   }
 
-  /**
-   * @param {string} name 
-   * @param {number} syncDir 
-   * @returns {number|Promise<number>}
-   */
-  jDelete(name, syncDir) {
+  jDelete(name: string, syncDir: number): number | Promise<number> {
     const url = new URL(name, 'file://');
     const pathname = url.pathname;
-
     this.mapNameToFile.delete(pathname);
     return VFS.SQLITE_OK;
   }
 
-  /**
-   * @param {string} name 
-   * @param {number} flags 
-   * @param {DataView} pResOut 
-   * @returns {number|Promise<number>}
-   */
-  jAccess(name, flags, pResOut) {
+  jAccess(name: string, flags: number, pResOut: DataView): number | Promise<number> {
     const url = new URL(name, 'file://');
     const pathname = url.pathname;
-
     const file = this.mapNameToFile.get(pathname);
     pResOut.setInt32(0, file ? 1 : 0, true);
     return VFS.SQLITE_OK;

@@ -1,5 +1,5 @@
-import { WebLocksMixin } from '../src/WebLocksMixin.js';
-import * as SQLite from '../src/sqlite-api.js';
+import { WebLocksMixin } from '../src/WebLocksMixin';
+import * as SQLite from '../src/sqlite-api';
 import { expect, expectAsync } from './helpers.ts';
 
 class Tester extends WebLocksMixin(Object) {

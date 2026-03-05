@@ -1,5 +1,5 @@
 import * as Comlink from 'comlink';
-import * as VFS from '../src/VFS.js';
+import * as VFS from '../src/VFS';
 import { expect } from './helpers.ts';
 import { TestContext } from './TestContext.ts';
 

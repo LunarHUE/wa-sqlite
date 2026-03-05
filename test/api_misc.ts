@@ -1,4 +1,4 @@
-import * as SQLite from '../src/sqlite-api.js';
+import * as SQLite from '../src/sqlite-api';
 import { expect, expectAsync } from './helpers.ts';
 import { TestContext } from './TestContext.ts';
 

@@ -1,7 +1,7 @@
 // Copyright 2024 Roy T. Hashimoto. All Rights Reserved.
 
 import * as Comlink from 'comlink';
-import * as SQLite from '../src/sqlite-api.js';
+import * as SQLite from '../src/sqlite-api';
 
 const BUILDS = new Map<string, string>([
   ['default', '../dist/wa-sqlite.mjs'],
@@ -25,43 +25,43 @@ const VFS_CONFIGS = new Map<string, VFSConfig>([
   },
   {
     name: 'AccessHandlePoolVFS',
-    vfsModule: '../src/examples/AccessHandlePoolVFS.js',
+    vfsModule: '../src/vfs/AccessHandlePoolVFS',
   },
   {
     name: 'OPFSCoopSyncVFS',
-    vfsModule: '../src/examples/OPFSCoopSyncVFS.js',
+    vfsModule: '../src/vfs/OPFSCoopSyncVFS',
   },
   {
     name: 'FLOOR',
-    vfsModule: '../src/examples/FLOOR.js',
+    vfsModule: '../src/vfs/FLOOR',
   },
   {
     name: 'MemoryVFS',
-    vfsModule: '../src/examples/MemoryVFS.js',
+    vfsModule: '../src/vfs/MemoryVFS',
   },
   {
     name: 'MemoryAsyncVFS',
-    vfsModule: '../src/examples/MemoryAsyncVFS.js',
+    vfsModule: '../src/vfs/MemoryAsyncVFS',
   },
   {
     name: 'IDBBatchAtomicVFS',
-    vfsModule: '../src/examples/IDBBatchAtomicVFS.js',
+    vfsModule: '../src/vfs/IDBBatchAtomicVFS',
   },
   {
     name: 'IDBMirrorVFS',
-    vfsModule: '../src/examples/IDBMirrorVFS.js',
+    vfsModule: '../src/vfs/IDBMirrorVFS',
   },
   {
     name: 'OPFSAdaptiveVFS',
-    vfsModule: '../src/examples/OPFSAdaptiveVFS.js',
+    vfsModule: '../src/vfs/OPFSAdaptiveVFS',
   },
   {
     name: 'OPFSAnyContextVFS',
-    vfsModule: '../src/examples/OPFSAnyContextVFS.js',
+    vfsModule: '../src/vfs/OPFSAnyContextVFS',
   },
   {
     name: 'OPFSPermutedVFS',
-    vfsModule: '../src/examples/OPFSPermutedVFS.js',
+    vfsModule: '../src/vfs/OPFSPermutedVFS',
   },
 ].map(config => [config.name, config]));
 
@@ -87,7 +87,7 @@ maybeReset().then(async () => {
     if (config.vfsModule) {
       // Create the VFS and register it as the default file system.
       const namespace = await import(config.vfsModule);
-      const className = config.vfsClass ?? config.vfsModule.match(/([^/]+)\.js$/)![1];
+      const className = config.vfsClass ?? config.vfsModule.match(/([^/]+)$/)![1];
       const vfsArgs = (config.vfsArgs ?? ['demo', MODULE])
         .map(arg => arg === MODULE ? module : arg);
       const vfs = await namespace[className].create(...vfsArgs);
