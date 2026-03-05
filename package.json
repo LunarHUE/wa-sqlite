@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build-docs": "typedoc",
-    "start": "web-dev-server --node-resolve",
+    "start": "web-dev-server",
     "test": "web-test-runner",
     "test-manual": "web-test-runner --manual"
   },
