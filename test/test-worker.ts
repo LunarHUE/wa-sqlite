@@ -75,8 +75,12 @@ maybeReset().then(async () => {
   const config = VFS_CONFIGS.get(configName)!;
 
   // Instantiate SQLite.
-  const { default: moduleFactory } = await import(BUILDS.get(buildName)!);
-  const module = await moduleFactory();
+  const buildPath = BUILDS.get(buildName)!;
+  const { default: moduleFactory } = await import(buildPath);
+  const buildDir = new URL(buildPath, import.meta.url).href.replace(/\/[^/]*$/, '/');
+  const module = await moduleFactory({
+    locateFile: (path: string) => buildDir + path,
+  });
   const sqlite3 = SQLite.Factory(module);
 
   const vfs = await (async function() {

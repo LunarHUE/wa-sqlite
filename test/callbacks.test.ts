@@ -1,20 +1,22 @@
 import { TestContext } from './TestContext.ts';
-import AsyncifyFactory from '@lunarhue/react-native-web-wa-sqlite/dist/wa-sqlite-async.mjs';
-import JSPIFactory from '@lunarhue/react-native-web-wa-sqlite/dist/wa-sqlite-jspi.mjs';
 import * as SQLite from '../src/sqlite-api.js';
 import { expect, expectAsync } from './helpers.ts';
 
-const FACTORIES = new Map([
-  ['asyncify', AsyncifyFactory],
-  ['jspi', JSPIFactory]
+const BUILDS = new Map([
+  ['asyncify', '../dist/wa-sqlite-async.mjs'],
+  ['jspi', '../dist/wa-sqlite-jspi.mjs'],
 ]);
 
 const supportsJSPI = await TestContext.supportsJSPI();
 
-for (const [key, factory] of FACTORIES) {
+for (const [key, buildPath] of BUILDS) {
   if (key === 'jspi' && !supportsJSPI) continue;
 
-  const sqlite3 = await (factory as any)().then((module: any) => SQLite.Factory(module));
+  const { default: factory } = await import(buildPath);
+  const buildDir = new URL(buildPath, import.meta.url).href.replace(/\/[^/]*$/, '/');
+  const sqlite3 = await (factory as any)({
+    locateFile: (path: string) => buildDir + path,
+  }).then((module: any) => SQLite.Factory(module));
   describe(`${key} create_function`, function() {
     let db: any;
     beforeEach(async function() {
