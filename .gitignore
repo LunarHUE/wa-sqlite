@@ -6,3 +6,5 @@ node_modules/
 /debug
 /deps
 /tmp
+
+result
