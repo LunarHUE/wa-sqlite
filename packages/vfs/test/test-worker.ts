@@ -4,9 +4,9 @@ import * as Comlink from 'comlink';
 import * as SQLite from '../src/sqlite-api';
 
 const BUILDS = new Map<string, string>([
-  ['default', '../dist/wa-sqlite.mjs'],
-  ['asyncify', '../dist/wa-sqlite-async.mjs'],
-  ['jspi', '../dist/wa-sqlite-jspi.mjs'],
+  ['default', '../node_modules/@lunarhue/wa-sqlite-wasm/dist/wa-sqlite.mjs'],
+  ['asyncify', '../node_modules/@lunarhue/wa-sqlite-wasm/dist/wa-sqlite-async.mjs'],
+  ['jspi', '../node_modules/@lunarhue/wa-sqlite-wasm/dist/wa-sqlite-jspi.mjs'],
 ]);
 
 const MODULE = Symbol('module');

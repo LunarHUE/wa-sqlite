@@ -1,0 +1,23 @@
+{
+  "name": "@lunarhue/expo-wa-sqlite",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@lunarhue/wa-sqlite": "workspace:*"
+  },
+  "peerDependencies": {
+    "drizzle-orm": "*",
+    "expo": "*",
+    "react": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

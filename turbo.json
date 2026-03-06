@@ -2,21 +2,9 @@
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
   "tasks": {
-    "build:wasm": {
-      "inputs": [
-        "src/wasm-src/**",
-        "flake.nix",
-        "overlay.wa-sqlite/**"
-      ],
-      "outputs": ["dist/*.mjs", "dist/*.wasm"]
-    },
-    "build:ts": {
-      "inputs": ["src/**/*.ts", "tsconfig.build.json"],
-      "outputs": ["dist/**/*.js", "dist/**/*.d.ts"]
-    },
-    "test": {
-      "dependsOn": ["build:wasm"],
-      "inputs": ["src/**/*.ts", "test/**/*.ts"]
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
     }
   }
 }

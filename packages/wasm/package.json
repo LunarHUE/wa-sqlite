@@ -1,0 +1,17 @@
+{
+  "name": "@lunarhue/wa-sqlite-wasm",
+  "version": "1.0.14",
+  "type": "module",
+  "exports": {
+    "./wa-sqlite.mjs": "./dist/wa-sqlite.mjs",
+    "./wa-sqlite-async.mjs": "./dist/wa-sqlite-async.mjs",
+    "./wa-sqlite-jspi.mjs": "./dist/wa-sqlite-jspi.mjs",
+    "./wa-sqlite.wasm": "./dist/wa-sqlite.wasm",
+    "./wa-sqlite-async.wasm": "./dist/wa-sqlite-async.wasm",
+    "./wa-sqlite-jspi.wasm": "./dist/wa-sqlite-jspi.wasm"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "node scripts/docker-build.mjs"
+  }
+}
