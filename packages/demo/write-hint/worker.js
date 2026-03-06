@@ -1,4 +1,5 @@
 import SQLiteESMFactory from '@/wasm/dist/wa-sqlite-async.mjs';
+import wasmUrl from '@/wasm/dist/wa-sqlite-async.wasm?url';
 import { IDBBatchAtomicVFS as MyVFS } from '@/vfs/src/vfs/IDBBatchAtomicVFS.ts';
 import * as SQLite from '@/vfs/src/sqlite-api.ts';
 
@@ -16,7 +17,7 @@ addEventListener('message', async event => {
     }
     await navigator.locks.request('reset', { mode: 'shared' }, () => {});
 
-    const module = await SQLiteESMFactory();
+    const module = await SQLiteESMFactory({ locateFile: () => wasmUrl });
     const sqlite3 = SQLite.Factory(module);
     const vfs = await MyVFS.create('write_hint', module, {
       lockPolicy: config.writeHint ? 'shared+hint' : 'shared'

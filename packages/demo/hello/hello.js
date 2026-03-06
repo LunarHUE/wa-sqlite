@@ -40,7 +40,7 @@ Promise.resolve().then(async () => {
   });
 
   // Initialize SQLite.
-  const module = await SQLiteESMFactory();
+  const module = await SQLiteESMFactory({ locateFile: () => wasmUrl });
   const sqlite3 = SQLite.Factory(module);
 
   // Register a custom file system.

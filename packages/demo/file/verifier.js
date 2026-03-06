@@ -1,4 +1,5 @@
 import SQLiteESMFactory from '@/wasm/dist/wa-sqlite-async.mjs';
+import wasmUrl from '@/wasm/dist/wa-sqlite-async.wasm?url';
 import * as SQLite from '@/vfs/src/sqlite-api.ts';
 import { IDBBatchAtomicVFS as MyVFS } from "@/vfs/src/vfs/IDBBatchAtomicVFS.ts";
 // import { IDBMirrorVFS as MyVFS } from "@/vfs/src/vfs/IDBMirrorVFS.ts";
@@ -8,7 +9,7 @@ const IDB_NAME = SEARCH_PARAMS.get('idb') ?? 'sqlite-vfs';
 const DB_NAME = SEARCH_PARAMS.get('db') ?? 'sqlite.db';
 
 (async function() {
-  const module = await SQLiteESMFactory();
+  const module = await SQLiteESMFactory({ locateFile: () => wasmUrl });
   const sqlite3 = SQLite.Factory(module);
 
   const vfs = await MyVFS.create(IDB_NAME, module);

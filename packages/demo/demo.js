@@ -2,9 +2,7 @@
 
 // This is the path to the Monaco editor distribution. For development
 // this loads from the local server (uses Yarn 2 path).
-const MONACO_VS = location.hostname.endsWith('localhost') ?
-  '/node_modules/.pnpm/monaco-editor@0.34.1/node_modules/monaco-editor/dev/vs' :
-  'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs';
+const MONACO_VS = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs';
 
 const SQL_KEY = 'wa-sqlite demo sql';
 const DEFAULT_SQL = `
