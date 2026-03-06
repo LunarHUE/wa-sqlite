@@ -36,16 +36,16 @@ for (const name of Object.keys(queries)) {
   });
 }
 
-const build = searchParams.get('build') ?? 'default';
-const config = searchParams.get('config') ?? 'default';
-const nWriters = Number(searchParams.get('nWriters') ?? 1);
-const nReaders = Number(searchParams.get('nReaders') ?? 1);
-const nSeconds = Number(searchParams.get('nSeconds') ?? 10);
-log(`build: ${build}`);
-log(`config: ${config}`);
-log(`nWriters: ${nWriters}`);
-log(`nReaders: ${nReaders}`);
-log(`nSeconds: ${nSeconds}`);
+const build = searchParams.get('build') ?? 'asyncify';
+const config = searchParams.get('config') ?? 'IDBBatchAtomicVFS';
+
+// Populate inputs from URL params, then read live from inputs on start.
+/** @type {HTMLInputElement} */ (document.getElementById('nWriters')).value =
+  searchParams.get('nWriters') ?? '1';
+/** @type {HTMLInputElement} */ (document.getElementById('nReaders')).value =
+  searchParams.get('nReaders') ?? '1';
+/** @type {HTMLInputElement} */ (document.getElementById('nSeconds')).value =
+  searchParams.get('nSeconds') ?? '10';
 
 function log(item) {
   const element = document.createElement('pre');
@@ -78,6 +78,15 @@ document.getElementById('start').addEventListener('click', async event => {
   try {
     // @ts-ignore
     event.target.disabled = true;
+
+    const nWriters = Number(/** @type {HTMLInputElement} */ (document.getElementById('nWriters')).value);
+    const nReaders = Number(/** @type {HTMLInputElement} */ (document.getElementById('nReaders')).value);
+    const nSeconds = Number(/** @type {HTMLInputElement} */ (document.getElementById('nSeconds')).value);
+    log(`build: ${build}`);
+    log(`config: ${config}`);
+    log(`nWriters: ${nWriters}`);
+    log(`nReaders: ${nReaders}`);
+    log(`nSeconds: ${nSeconds}`);
 
     const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 

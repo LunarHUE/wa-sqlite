@@ -9,7 +9,18 @@ const benchmarksReady = Promise.all(Array.from(new Array(16), (_, i) => {
 }));
 
 // Parse configurations from the URL and add table columns.
-const CONFIGURATIONS = (searchParams.get('config') ?? 'default,')
+// The benchmarks format is "build,vfsName;build2,vfsName2;..."
+// But if nav-style params are used (?config=VfsName&build=buildName), combine them.
+function getConfigurations() {
+  const build = searchParams.get('build') || 'asyncify';
+  const config = searchParams.get('config');
+  if (config && !config.includes(',')) {
+    // Nav-style: config=VfsName&build=buildName
+    return `${build},${config}`;
+  }
+  return config ?? `${build},IDBBatchAtomicVFS`;
+}
+const CONFIGURATIONS = getConfigurations()
   .split(';')
   .map(config => config.split(','));
 const headers = document.querySelector('thead').firstElementChild;

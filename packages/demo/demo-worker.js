@@ -75,8 +75,8 @@ const WASM_URLS = new Map([
 const searchParams = new URLSearchParams(location.search);
 
 maybeReset().then(async () => {
-  const buildName = searchParams.get('build') || BUILDS.keys().next().value;
-  const configName = searchParams.get('config') || VFS_CONFIGS.keys().next().value;
+  const buildName = searchParams.get('build') || 'asyncify';
+  const configName = searchParams.get('config') || 'IDBBatchAtomicVFS';
   const config = VFS_CONFIGS.get(configName);
 
   const dbName = searchParams.get('dbName') ?? 'hello';
