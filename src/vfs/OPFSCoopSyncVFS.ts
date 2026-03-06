@@ -450,7 +450,7 @@ export class OPFSCoopSyncVFS extends FacadeVFS {
       navigator.locks.request(lockName, lock => {
         this.log?.(`lock acquired: ${lockName}`, lock);
         clearInterval(notifyId);
-        return new Promise(resolve);
+        return new Promise(resolve as any);
       });
     });
   }

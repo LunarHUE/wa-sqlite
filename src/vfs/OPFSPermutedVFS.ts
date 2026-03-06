@@ -168,7 +168,7 @@ export class OPFSPermutedVFS extends FacadeVFS {
             console.warn(`Checksum error, removing tx ${e.txId}+`);
             const tx = file.idb.transaction('pending', 'readwrite');
             const txCommit = new Promise<void>((resolve, reject) => {
-              tx.oncomplete = resolve;
+              tx.oncomplete = resolve as any;
               tx.onabort = () => reject(tx.error);
             });
             const range = IDBKeyRange.lowerBound(e.txId);
@@ -868,7 +868,7 @@ export class OPFSPermutedVFS extends FacadeVFS {
     file.broadcastChannel.postMessage(file.txActive);
     const tx = file.idb.transaction('pending', 'readwrite');
     const txComplete = new Promise<void>((resolve, reject) => {
-      tx.oncomplete = resolve;
+      tx.oncomplete = resolve as any;
       tx.onabort = () => reject(tx.error);
     });
     tx.objectStore('pending').put(file.txActive);

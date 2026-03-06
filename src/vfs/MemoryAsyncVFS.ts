@@ -8,7 +8,7 @@ export class MemoryAsyncVFS extends MemoryVFS {
   static async create(name: string, module: any): Promise<MemoryAsyncVFS> {
     const vfs = new MemoryVFS(name, module);
     await vfs.isReady();
-    return vfs;
+    return vfs as unknown as MemoryAsyncVFS;
   }
 
   constructor(name: string, module: any) {

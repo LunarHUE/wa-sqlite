@@ -289,7 +289,7 @@ class Uint8ArrayProxy {
     this.length = this.byteLength = byteLength;
   }
 
-  get buffer(): ArrayBuffer { return this.#array.buffer; }
+  get buffer(): ArrayBuffer { return this.#array.buffer as ArrayBuffer; }
 
   at(index: number) { return this.#array.at(index); }
   copyWithin(target: number, start: number, end?: number) { this.#array.copyWithin(target, start, end); }
@@ -349,7 +349,7 @@ class DataViewProxy {
     this.#type = type;
   }
 
-  get buffer(): ArrayBuffer { return this.#view.buffer; }
+  get buffer(): ArrayBuffer { return this.#view.buffer as ArrayBuffer; }
   get byteLength(): number { return this.#type === 'Int32' ? 4 : 8; }
 
   getInt32(byteOffset: number, littleEndian: boolean): number {

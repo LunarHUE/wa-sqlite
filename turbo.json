@@ -1,5 +1,6 @@
 {
-  "$schema": "https://turbo.build/schema.json",
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "tui",
   "tasks": {
     "build:wasm": {
       "inputs": [
@@ -12,9 +13,6 @@
     "build:ts": {
       "inputs": ["src/**/*.ts", "tsconfig.build.json"],
       "outputs": ["dist/**/*.js", "dist/**/*.d.ts"]
-    },
-    "build": {
-      "dependsOn": ["build:wasm", "build:ts"]
     },
     "test": {
       "dependsOn": ["build:wasm"],

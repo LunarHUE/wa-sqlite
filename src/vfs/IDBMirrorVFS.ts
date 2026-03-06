@@ -586,7 +586,7 @@ export class IDBMirrorVFS extends FacadeVFS {
       .delete(IDBKeyRange.bound([path, 0], [path, Infinity]));
     await new Promise<void>((resolve, reject) => {
       const idbTx = request.transaction;
-      idbTx.oncomplete = resolve;
+      idbTx.oncomplete = resolve as any;
       idbTx.onerror = () => reject(idbTx.error);
     });
   }

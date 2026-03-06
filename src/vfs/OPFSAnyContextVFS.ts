@@ -159,7 +159,7 @@ export class OPFSAnyContextVFS extends WebLocksMixin(FacadeVFS) {
         file.writable = await file.fileHandle.createWritable({ keepExistingData: true });
       }
       await file.writable.seek(iOffset);
-      await file.writable.write(pData.subarray());
+      await file.writable.write(pData.subarray() as unknown as ArrayBuffer);
       file.blob = null;
 
       return VFS.SQLITE_OK;

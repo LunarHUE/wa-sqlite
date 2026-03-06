@@ -6,7 +6,7 @@ const POLL_EXCLUSIVE: LockOptions = { ifAvailable: true, mode: 'exclusive' };
 
 const POLICIES = ['exclusive', 'shared', 'shared+hint'];
 
-interface LockState {
+export interface LockState {
   baseName: string;
   type: number;
   writeHint: boolean;
@@ -16,7 +16,7 @@ interface LockState {
   hint?: (() => void) | null;
 }
 
-interface WebLocksMixinOptions {
+export interface WebLocksMixinOptions {
   lockPolicy?: string;
   lockTimeout?: number;
 }

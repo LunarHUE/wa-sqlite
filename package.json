@@ -19,7 +19,7 @@
     "test"
   ],
   "scripts": {
-    "build": "turbo run build",
+    "build": "turbo run build:wasm build:ts",
     "build:wasm": "node scripts/docker-build.mjs",
     "build:ts": "tsc -p tsconfig.build.json",
     "build-docs": "typedoc",

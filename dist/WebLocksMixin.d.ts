@@ -1,4 +1,4 @@
-interface LockState {
+export interface LockState {
     baseName: string;
     type: number;
     writeHint: boolean;
@@ -7,7 +7,7 @@ interface LockState {
     reserved?: (() => void) | null;
     hint?: (() => void) | null;
 }
-interface WebLocksMixinOptions {
+export interface WebLocksMixinOptions {
     lockPolicy?: string;
     lockTimeout?: number;
 }
@@ -37,4 +37,3 @@ export declare const WebLocksMixin: {
     };
     WRITE_HINT_OP_CODE: number;
 };
-export {};

@@ -1,3 +1,17 @@
+// OPFS Sync Access Handle — only available in Worker contexts but used across VFS files
+interface FileSystemSyncAccessHandle {
+  read(buffer: ArrayBuffer | ArrayBufferView, options?: { at?: number }): number;
+  write(buffer: ArrayBuffer | ArrayBufferView, options?: { at?: number }): number;
+  flush(): void;
+  close(): void;
+  getSize(): number;
+  truncate(newSize: number): void;
+}
+
+interface FileSystemFileHandle {
+  createSyncAccessHandle(options?: { mode?: string }): Promise<FileSystemSyncAccessHandle>;
+}
+
 declare namespace Asyncify {
   function handleAsync(f: () => Promise<any>);
 }
