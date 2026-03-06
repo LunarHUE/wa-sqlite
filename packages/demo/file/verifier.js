@@ -1,7 +1,7 @@
-import SQLiteESMFactory from '../../dist/wa-sqlite-async.mjs';
-import * as SQLite from '../../src/sqlite-api.js';
-import { IDBBatchAtomicVFS as MyVFS } from "../../src/examples/IDBBatchAtomicVFS.js";
-// import { IDBMirrorVFS as MyVFS } from "../../src/examples/IDBMirrorVFS.js";
+import SQLiteESMFactory from '@/wasm/dist/wa-sqlite-async.mjs';
+import * as SQLite from '@/vfs/src/sqlite-api.ts';
+import { IDBBatchAtomicVFS as MyVFS } from "@/vfs/src/vfs/IDBBatchAtomicVFS.ts";
+// import { IDBMirrorVFS as MyVFS } from "@/vfs/src/vfs/IDBMirrorVFS.ts";
 
 const SEARCH_PARAMS = new URLSearchParams(location.search);
 const IDB_NAME = SEARCH_PARAMS.get('idb') ?? 'sqlite-vfs';

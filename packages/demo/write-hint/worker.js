@@ -1,6 +1,6 @@
-import SQLiteESMFactory from '../../dist/wa-sqlite-async.mjs';
-import { IDBBatchAtomicVFS as MyVFS } from '../../src/examples/IDBBatchAtomicVFS.js';
-import * as SQLite from '../../src/sqlite-api.js';
+import SQLiteESMFactory from '@/wasm/dist/wa-sqlite-async.mjs';
+import { IDBBatchAtomicVFS as MyVFS } from '@/vfs/src/vfs/IDBBatchAtomicVFS.ts';
+import * as SQLite from '@/vfs/src/sqlite-api.ts';
 
 addEventListener('message', async event => {
   try {

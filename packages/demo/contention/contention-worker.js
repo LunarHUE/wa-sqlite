@@ -1,20 +1,26 @@
-import * as SQLite from "../../src/sqlite-api.js";
+import * as SQLite from "@/vfs/src/sqlite-api.ts";
+import wasmDefault from '@/wasm/dist/wa-sqlite.wasm?url';
+import wasmAsync from '@/wasm/dist/wa-sqlite-async.wasm?url';
+import wasmJspi from '@/wasm/dist/wa-sqlite-jspi.wasm?url';
 
 const BROADCAST_CHANNEL_NAME = 'contention';
 
 const BUILDS = new Map([
-  ['default', '../../dist/wa-sqlite.mjs'],
-  ['asyncify', '../../dist/wa-sqlite-async.mjs'],
-  ['jspi', '../../dist/wa-sqlite-jspi.mjs'],
-  // ['default', '../../debug/wa-sqlite.mjs'],
-  // ['asyncify', '../../debug/wa-sqlite-async.mjs'],
-  // ['jspi', '../../debug/wa-sqlite-jspi.mjs'],
+  ['default', () => import('@/wasm/dist/wa-sqlite.mjs')],
+  ['asyncify', () => import('@/wasm/dist/wa-sqlite-async.mjs')],
+  ['jspi', () => import('@/wasm/dist/wa-sqlite-jspi.mjs')],
+]);
+
+const WASM_URLS = new Map([
+  ['default', wasmDefault],
+  ['asyncify', wasmAsync],
+  ['jspi', wasmJspi],
 ]);
 
 /**
  * @typedef Config
  * @property {string} name
- * @property {string} vfsModule path of the VFS module
+ * @property {() => Promise<any>} [loadVfs] lazy loader for the VFS module
  * @property {string} [vfsClassName] name of the VFS class
  * @property {object} [vfsOptions] VFS constructor arguments
  */
@@ -22,45 +28,40 @@ const BUILDS = new Map([
 /** @type {Map<string, Config>} */ const VFS_CONFIGS = new Map([
   {
     name: 'default',
-    vfsModule: null
   },
   {
     name: 'MemoryVFS',
-    vfsModule: '../../src/examples/MemoryVFS.js',
+    loadVfs: () => import('@/vfs/src/vfs/MemoryVFS.ts'),
   },
   {
     name: 'MemoryAsyncVFS',
-    vfsModule: '../../src/examples/MemoryAsyncVFS.js',
+    loadVfs: () => import('@/vfs/src/vfs/MemoryAsyncVFS.ts'),
   },
   {
     name: 'IDBBatchAtomicVFS',
-    vfsModule: '../../src/examples/IDBBatchAtomicVFS.js',
+    loadVfs: () => import('@/vfs/src/vfs/IDBBatchAtomicVFS.ts'),
     vfsOptions: { lockPolicy: 'shared+hint' }
   },
   {
     name: 'IDBMirrorVFS',
-    vfsModule: '../../src/examples/IDBMirrorVFS.js',
+    loadVfs: () => import('@/vfs/src/vfs/IDBMirrorVFS.ts'),
   },
   {
     name: 'OPFSAdaptiveVFS',
-    vfsModule: '../../src/examples/OPFSAdaptiveVFS.js',
+    loadVfs: () => import('@/vfs/src/vfs/OPFSAdaptiveVFS.ts'),
     vfsOptions: { lockPolicy: 'shared+hint' }
   },
   {
     name: 'OPFSCoopSyncVFS',
-    vfsModule: '../../src/examples/OPFSCoopSyncVFS.js',
+    loadVfs: () => import('@/vfs/src/vfs/OPFSCoopSyncVFS.ts'),
   },
   {
     name: 'OPFSPermutedVFS',
-    vfsModule: '../../src/examples/OPFSPermutedVFS.js',
+    loadVfs: () => import('@/vfs/src/vfs/OPFSPermutedVFS.ts'),
   },
   {
     name: 'AccessHandlePoolVFS',
-    vfsModule: '../src/examples/AccessHandlePoolVFS.js',
-  },
-  {
-    name: 'FLOOR',
-    vfsModule: '../../src/examples/FLOOR.js',
+    loadVfs: () => import('@/vfs/src/vfs/AccessHandlePoolVFS.ts'),
   },
 ].map(config => [config.name, config]));
 
@@ -97,16 +98,16 @@ const releaseTask = (function() {
   const config = VFS_CONFIGS.get(configName);
 
   // Instantiate SQLite.
-  const { default: moduleFactory } = await import(BUILDS.get(build));
-  const module = await moduleFactory();
+  const { default: moduleFactory } = await BUILDS.get(build)();
+  const module = await moduleFactory({ locateFile: () => WASM_URLS.get(build) });
   const sqlite3 = SQLite.Factory(module);
 
   const dbName = searchParams.get('dbName') ?? 'hello';
   const vfsName = searchParams.get('vfsName') ?? 'demo';
-  if (config.vfsModule) {
+  if (config.loadVfs) {
     // Create the VFS and register it as the default file system.
-    const namespace = await import(config.vfsModule);
-    const className = config.vfsClassName ?? config.vfsModule.match(/([^/]+)\.js$/)[1];
+    const namespace = await config.loadVfs();
+    const className = config.vfsClassName ?? config.name;
     const vfs = await namespace[className].create(vfsName, module, config.vfsOptions);
     sqlite3.vfs_register(vfs, true);
   }
