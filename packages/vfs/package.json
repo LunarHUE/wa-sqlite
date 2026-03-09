@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/sqlite-api.d.ts",
       "import": "./dist/sqlite-api.js"
+    },
+    "./vfs/IDBBatchAtomicVFS": {
+      "types": "./dist/vfs/IDBBatchAtomicVFS.d.ts",
+      "import": "./dist/vfs/IDBBatchAtomicVFS.js"
     }
   },
   "types": "dist/sqlite-api.d.ts",

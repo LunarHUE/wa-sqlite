@@ -9,3 +9,5 @@ node_modules/
 
 result
 .turbo/
+.next/
+lovely-docs/

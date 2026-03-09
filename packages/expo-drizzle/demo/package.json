@@ -1,0 +1,26 @@
+{
+  "name": "@lunarhue/expo-wa-sqlite-demo",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/copy-wasm.mjs && next dev",
+    "build": "node scripts/copy-wasm.mjs && next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@lunarhue/expo-wa-sqlite": "workspace:*",
+    "@lunarhue/wa-sqlite": "workspace:*",
+    "@lunarhue/wa-sqlite-wasm": "workspace:*",
+    "drizzle-orm": "0.45.1",
+    "next": "^15.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.3.3"
+  }
+}
