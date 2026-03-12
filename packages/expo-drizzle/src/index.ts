@@ -85,7 +85,7 @@ function makeCallback(conn: Connection) {
     sql: string,
     params: any[],
     _method: 'run' | 'all' | 'values' | 'get',
-  ): Promise<{ rows: any[][] }> => {
+  ): Promise<{ rows: any }> => {
     const task = async () => {
       while (true) {
         try {
@@ -100,7 +100,16 @@ function makeCallback(conn: Connection) {
             }
           }
 
-          return { rows };
+          switch (method) {
+            case 'run':
+              return { rows: [] };
+            case 'get':
+              return { rows: rows[0] };
+            case 'all':
+            case 'values':
+            default:
+              return { rows };
+          }
         } catch (e: any) {
           if (e.code === SQLite.SQLITE_BUSY) {
             if (!sqlite3.get_autocommit(db)) {
