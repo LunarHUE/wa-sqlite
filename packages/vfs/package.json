@@ -1,6 +1,6 @@
 {
   "name": "@lunarhue/wa-sqlite",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "type": "module",
   "main": "dist/sqlite-api.js",
   "exports": {
@@ -26,7 +26,7 @@
     "test-manual": "web-test-runner --manual"
   },
   "dependencies": {
-    "@lunarhue/wa-sqlite-wasm": "workspace:*"
+    "@lunarhue/wa-sqlite-wasm": "^1.0.15"
   },
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4",
