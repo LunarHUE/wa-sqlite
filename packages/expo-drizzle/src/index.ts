@@ -42,6 +42,7 @@ export interface WaSQLiteOptions {
 interface Connection {
   sqlite3: any;
   db: number;
+  queue: Promise<any>; 
 }
 
 // Module-level singleton: one open connection per dbName.
@@ -67,7 +68,7 @@ async function openConnection(options: WaSQLiteOptions): Promise<Connection> {
 
   const db = await sqlite3.open_v2(dbName);
 
-  return { sqlite3, db };
+  return { sqlite3, db, queue: Promise.resolve() };
 }
 
 function getOrCreateConnection(options: WaSQLiteOptions): Promise<Connection> {
@@ -77,24 +78,47 @@ function getOrCreateConnection(options: WaSQLiteOptions): Promise<Connection> {
   return connections.get(options.dbName)!;
 }
 
-function makeCallback(sqlite3: any, db: number) {
+function makeCallback(conn: Connection) {
+  const { sqlite3, db } = conn;
+
   return async (
     sql: string,
     params: any[],
     _method: 'run' | 'all' | 'values' | 'get',
   ): Promise<{ rows: any[][] }> => {
-    const rows: any[][] = [];
+    const task = async () => {
+      while (true) {
+        try {
+          const rows: any[][] = [];
 
-    for await (const stmt of sqlite3.statements(db, sql)) {
-      if (params.length > 0) {
-        sqlite3.bind_collection(stmt, params);
-      }
-      while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
-        rows.push(sqlite3.row(stmt));
-      }
-    }
+          for await (const stmt of sqlite3.statements(db, sql)) {
+            if (params.length > 0) {
+              sqlite3.bind_collection(stmt, params);
+            }
+            while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
+              rows.push(sqlite3.row(stmt));
+            }
+          }
 
-    return { rows };
+          return { rows };
+        } catch (e: any) {
+          if (e.code === SQLite.SQLITE_BUSY) {
+            if (!sqlite3.get_autocommit(db)) {
+              await sqlite3.exec(db, 'ROLLBACK;');
+            }
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            continue;
+          }
+          
+          console.error('Drizzle/WASM Error:', e);
+          throw e;
+        }
+      }
+    };
+
+    const result = conn.queue.then(task, task);
+    conn.queue = result.catch(() => {}) as Promise<any>;
+    return result;
   };
 }
 
@@ -109,8 +133,8 @@ export async function openWaSQLiteDB<
   options: WaSQLiteOptions,
   config?: DrizzleConfig<TSchema>,
 ): Promise<SqliteRemoteDatabase<TSchema>> {
-  const { sqlite3, db } = await getOrCreateConnection(options);
-  return drizzle(makeCallback(sqlite3, db), config) as SqliteRemoteDatabase<TSchema>;
+  const conn = await getOrCreateConnection(options);
+  return drizzle(makeCallback(conn), config) as SqliteRemoteDatabase<TSchema>;
 }
 
 interface HookState<TSchema extends Record<string, unknown>> {
@@ -155,10 +179,10 @@ export function useWaSQLiteDB<
     let cancelled = false;
 
     getOrCreateConnection(options)
-      .then(({ sqlite3, db }) => {
+      .then((conn) => {
         if (cancelled) return;
         const drizzleDb = drizzle(
-          makeCallback(sqlite3, db),
+          makeCallback(conn),
           config,
         ) as SqliteRemoteDatabase<TSchema>;
         setState({ db: drizzleDb, error: null, isReady: true });

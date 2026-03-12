@@ -1,3 +1,6 @@
 packages:
-  - 'packages/*'
-  - 'packages/expo-drizzle/demo'
+  - packages/*
+  - packages/expo-drizzle/demo
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
