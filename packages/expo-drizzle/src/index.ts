@@ -100,7 +100,7 @@ function makeCallback(conn: Connection) {
             }
           }
 
-          switch (method) {
+          switch (_method) {
             case 'run':
               return { rows: [] };
             case 'get':
